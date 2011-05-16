@@ -1,0 +1,11 @@
+You're working on software.
+You use a git repo for your local development, but the main project is 
+actually managed in bzr.
+This is a little script to help create patches from git and apply them to bzr.
+To use it:
+ (1) install git-bzr in /usr/local/bin 
+ (2) edit ~/git-bzr.rc to define three variables:
+    GIT_TREE is the path to the git repo
+    BZR_TREE is the path to the bzr repo
+    WORK_DIR is a working directory where git-bzr will manage patches and logs
+
