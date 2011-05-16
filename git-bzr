@@ -18,10 +18,10 @@ die() {
 
 usage() {
   echo "usage: "
-  echo " $0 --diff <git-rev-1> <git-rev-2>    Create a patch file"
-  echo " $0 --patch <patch-id>                Apply patch to bzr tree"
-  echo " $0 --commit <patch-id>               Commit a patch to bzr"
-  echo " $0 --rollback <patch-id>             Revert patch from bzr"
+  echo " $0 diff <git-rev-1> <git-rev-2>    Create a patch file"
+  echo " $0 patch <patch-id>                Apply patch to bzr tree"
+  echo " $0 commit <patch-id>               Commit a patch to bzr"
+  echo " $0 rollback <patch-id>             Revert patch from bzr"
   echo
   exit 1
 }
@@ -156,16 +156,16 @@ do_rollback() {
 get_working_paths
 prep_working_dir
 case "$1" in 
-  "--diff" )
+  "diff" )
      do_diff $2 $3 $4
   ;;
-  "--patch" )
+  "patch" )
      do_patch $2
   ;;
-  "--commit" )
+  "commit" )
      do_commit $2
   ;;
-  "--rollback" )
+  "rollback" )
      do_rollback $2
   ;; 
   * ) 
