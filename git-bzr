@@ -1,14 +1,10 @@
 #!/bin/bash
 
 #
-# 
-#  Get the diff between two git trees, then apply it to a bzr tree
+#  Create a patch, then apply it to a bzr tree
 
 ## Save the initial directory
 INITIAL_WD=`pwd`
-
-# Path to the rc file
-GIT_BZR_RC=$HOME/git-bzr.rc
 
 die() {
   echo Error: $1
@@ -17,32 +13,27 @@ die() {
 }
 
 usage() {
-  git_bzr=`basename $0`
-  echo "usage: "
-  echo " $git_bzr make-patch <git-revision>      Create a patch file based on a commit"
-  echo " $git_bzr diff <git-rev-1> <git-rev-2>   Create a patch file based on 2 versions"
-  echo " $git_bzr test <patch-id>                Show dry run of applying patch"
-  echo " $git_bzr apply <patch-id>               Apply patch to bzr tree"
-  echo " $git_bzr commit <patch-id>              Commit a patch to bzr tree"
-  echo " $git_bzr rollback <patch-id>            Revert patch from bzr tree"
-  echo
-  exit 1
-}
-
-env_error() {
-  echo "To use this utility you must define three variables: "
-  echo "  GIT_TREE     Path to git repository"
-  echo "  BZR_TREE     Path to bzr repository"
-  echo "  WORK_DIR     Path to working directory for patches and logs"
-  echo   
-  echo "You can define these in your $HOME/git-bzr.rc file"
+  echo "USAGE: "
+  echo " git bzr make-patch <git-revision>      Create a patch file based on a commit"
+  echo " git bzr diff  <git-rev-1> <git-rev-2>  Create a patch file based on 2 versions"
+  echo " git bzr test     <patch-id>            Show dry run of applying patch"
+  echo " git bzr apply    <patch-id>            Apply patch to bzr tree"
+  echo " git bzr commit   <patch-id>            Commit a patch to bzr tree"
+  echo " git bzr rollback <patch-id>            Revert patch from bzr tree"
+  echo " git bzr latest                         Display the most recent commit"
   echo
   exit 1
 }
 
 get_working_paths() {
-  test -n "$BZR_TREE" -a -n "$GIT_TREE" -a -n "WORK_DIR" || source $GIT_BZR_RC
-  test -n "$BZR_TREE" -a -n "$GIT_TREE" -a -n "WORK_DIR" || env_error
+  BZR_TREE=`git config git-bzr.bzr-tree`
+  WORK_DIR=`git config git-bzr.vault` 
+  test -n "$BZR_TREE" -a -n "WORK_DIR" && return
+  echo "Before using this utility you must use ``git config'' to define two variables: "
+  echo "  git-bzr.bzr-tree    Path to bzr repository"
+  echo "  git-bzr.vault       Path to working directory for patches and logs"
+  echo   
+  exit 1  
 }
 
 prep_working_dir() {
@@ -54,6 +45,7 @@ prep_working_dir() {
   test -d pending    || mkdir pending
   test -d committed  || mkdir committed
   test -d rolledback || mkdir rolledback
+  test -d info_files || mkdir info_files
   cd $INITIAL_WD
 }
 
@@ -81,12 +73,10 @@ do_diff() {
   
   ## Here's the output file for the diff
   PATCH_FILE=$WORK_DIR/pending/$idx.patch
+  PATCH_INFO_FILE=$WORK_DIR/info_files/$idx
 
   ## And the log file
   LOG_FILE=$WORK_DIR/history
-
-  ## Now move on to the git tree
-  cd $GIT_TREE
 
   # Get fully-qualified SHA1 id's of the revision specs
   VER1_FQ=`git rev-parse --quiet --verify --revs-only $VER1`
@@ -112,6 +102,9 @@ do_diff() {
     echo $SHORTSTAT
     echo
   ) >> $LOG_FILE
+
+  ## Write the info file
+  echo "Patch: $idx Rev: $VER2_FQ " `date` > $PATCH_INFO_FILE
 
   echo 
   echo "Created patch $idx"
@@ -145,6 +138,7 @@ do_commit() {
   
   cd $WORK_DIR
   mv pending/$idx.patch committed/
+  echo $idx > latest.commit
 }
 
 do_rollback() {
@@ -157,6 +151,16 @@ do_rollback() {
   bzr revert
   find . -name \*.rej  -exec rm '{}' \;
   find . -name \*.orig -exec rm '{}' \;
+}
+
+do_latest() {
+  cd $WORK_DIR
+  if test -f latest.commit 
+    then let idx=`cat latest.commit`
+    cat info_files/$idx
+  else
+    echo "No history information available."
+  fi
 }
   
 
@@ -184,6 +188,9 @@ case "$1" in
   "rollback" )
      do_rollback $2
   ;; 
+  "latest" )
+     do_latest
+  ;;
   * ) 
      usage
   ;;
