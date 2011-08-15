@@ -141,7 +141,8 @@ do_commit() {
 do_committed() {  
   cd $WORK_DIR
   mv pending/$idx.patch committed/
-  echo $idx > latest.commit
+  let latest=`cat latest.commit`
+  test $idx -gt $latest && echo $idx > latest.commit
 }
 
 do_rollback() {
