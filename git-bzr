@@ -16,11 +16,12 @@ usage() {
   echo "USAGE: "
   echo " git bzr make-patch <git-revision>      Create a patch file based on a commit"
   echo " git bzr diff  <git-rev-1> <git-rev-2>  Create a patch file based on 2 versions"
-  echo " git bzr test     <patch-id>            Show dry run of applying patch"
-  echo " git bzr apply    <patch-id>            Apply patch to bzr tree"
-  echo " git bzr commit   <patch-id>            Commit a patch to bzr tree"
-  echo " git bzr rollback <patch-id>            Revert patch from bzr tree"
-  echo " git bzr latest                         Display the most recent commit"
+  echo " git bzr test      <patch-id>            Show dry run of applying patch"
+  echo " git bzr apply     <patch-id>            Apply patch to bzr tree"
+  echo " git bzr commit    <patch-id>            Commit a patch to bzr tree"
+  echo " git bzr committed <patch-id>            Record that patch has been committed"
+  echo " git bzr rollback  <patch-id>            Revert patch from bzr tree"
+  echo " git bzr latest                          Display the most recent commit"
   echo
   exit 1
 }
@@ -134,8 +135,10 @@ do_commit() {
   get_patch_file "$1"
   
   cd $BZR_TREE
-  bzr commit 
-  
+  bzr commit && do_committed
+}
+
+do_committed() {  
   cd $WORK_DIR
   mv pending/$idx.patch committed/
   echo $idx > latest.commit
@@ -184,6 +187,10 @@ case "$1" in
   ;;
   "commit" )
      do_commit $2
+  ;;
+  "committed" ) 
+     get_patch_file "$2" 
+     do_committed
   ;;
   "rollback" )
      do_rollback $2
